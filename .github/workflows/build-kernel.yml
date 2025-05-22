@@ -53,24 +53,13 @@ jobs:
       if: env.USE_CUSTOM_CLANG == 'true' && env.USE_CUSTOM_GCC != 'true' && env.ENABLE_GCC_AOSP != 'true'
       run: |
         cd $GITHUB_WORKSPACE/kernel_workspace
-        if [[ ${{ env.CUSTOM_CLANG_SOURCE }} == *'.tar.gz' ]]; then
-            wget -nv -O clang.tar.gz ${{ env.CUSTOM_CLANG_SOURCE }}
-            mkdir clang
-            tar -C clang/ -zxvf clang.tar.gz
-        elif [[ ${{ env.CUSTOM_CLANG_SOURCE }} == *'.tar.xz' ]]; then
-            wget -nv -O clang.tar.xz ${{ env.CUSTOM_CLANG_SOURCE }}
-            mkdir clang
-            tar -C clang/ -Jxvf clang.tar.xz
-        elif [[ ${{ env.CUSTOM_CLANG_SOURCE }} == *'.git' ]]; then
-            git clone ${{ env.CUSTOM_CLANG_SOURCE }} -b ${{ env.CUSTOM_CLANG_BRANCH }} clang --depth=1
-        else
-            wget -nv -O clang.zip ${{ env.CUSTOM_CLANG_SOURCE }}
-            mkdir clang
-            unzip clang.zip -d clang/
-        fi
-        if [[ "$(find ./clang -mindepth 1 -maxdepth 1 -type d | wc -l)" == "1" ]]; then
-            mv -f "$(find ./clang -mindepth 1 -maxdepth 1 -type d)"/* ./clang
-        fi
+        mkdir -p clang
+        cd clang
+        curl -LO "https://raw.githubusercontent.com/Neutron-Toolchains/antman/main/antman"
+        chmod +x antman
+        ./antman -S
+        export HOME=$GITHUB_WORKSPACE/kernel_workspace
+        ./antman --patch=glibc
 
     - name: Download GCC AOSP
       if: env.ENABLE_GCC_AOSP == 'true' && env.USE_CUSTOM_GCC != 'true' && env.USE_CUSTOM_CLANG != 'true'
