@@ -1,17 +1,55 @@
 name: Build Kernel [Merlin]
 on:
   workflow_dispatch:
+    inputs:
+      build_ksun:
+        description: 'Build KernelSU-Next A13+'
+        required: true
+        default: true
+        type: boolean
+      build_ksun_old:
+        description: 'Build KernelSU-Next A11'
+        required: true
+        default: true
+        type: boolean
+      build_suki:
+        description: 'Build SukiSU A13+'
+        required: true
+        default: true
+        type: boolean
+      build_suki_old:
+        description: 'Build SukiSU A11'
+        required: true
+        default: true
+        type: boolean
 
 jobs:
+  generate-build-matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set.outputs.matrix }}
+    steps:
+      - id: set
+        run: |
+          targets=()
+          if [[ "${{ github.event.inputs.build_ksun }}" == "true" ]]; then targets+=("ksun"); fi
+          if [[ "${{ github.event.inputs.build_ksun_old }}" == "true" ]]; then targets+=("ksun-old"); fi
+          if [[ "${{ github.event.inputs.build_suki }}" == "true" ]]; then targets+=("suki"); fi
+          if [[ "${{ github.event.inputs.build_suki_old }}" == "true" ]]; then targets+=("suki-old"); fi
+          json=$(printf '%s\n' "${targets[@]}" | jq -R . | jq -s '{target: .}')
+          echo "matrix<<EOF" >> $GITHUB_OUTPUT
+          echo "$json" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+          
   build:
+    needs: generate-build-matrix
     runs-on: ubuntu-22.04
     env:
       CCACHE_COMPILERCHECK: "%compiler% -dumpmachine; %compiler% -dumpversion"
       CCACHE_NOHASHDIR: "true"
       CCACHE_HARDLINK: "true"
     strategy:
-      matrix:
-        target: [ksun, ksun-old, suki, suki-old]
+      matrix: ${{ fromJson(needs.generate-build-matrix.outputs.matrix) }}
     steps:
     - uses: actions/checkout@v4
     - name: Find correct config name
