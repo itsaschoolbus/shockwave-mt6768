@@ -185,14 +185,14 @@ jobs:
       run: |
         cd $GITHUB_WORKSPACE/kernel_workspace/android-kernel
         curl -LSs "https://raw.githubusercontent.com/rifsxd/KernelSU-Next/next/kernel/setup.sh" | bash -s next
-        if [ -d KernelSU ]; then
-            KSU_VERSION="_$(cd KernelSU && expr $(/usr/bin/git rev-list --count HEAD) + 10200)"
+        if [ -d KernelSU-Next ]; then
+            KSU_VERSION="_$(cd KernelSU-Next && expr $(/usr/bin/git rev-list --count HEAD) + 10200)"
         else
             KSU_VERSION=""
         cd KernelSU-Next
         git apply $GITHUB_WORKSPACE/patches/SUSFS_KSUN.patch
         fi
-        echo "UPLOADNAME=-KernelSU$KSU_VERSION" >> $GITHUB_ENV
+        echo "UPLOADNAME=-KernelSU-${{ matrix.target }}$KSU_VERSION" >> $GITHUB_ENV
         if [ ${{ env.KSU_REVERT }} = true ]; then
             git apply $GITHUB_WORKSPACE/patches/KSU_REVERT.patch
         fi
@@ -207,7 +207,7 @@ jobs:
         else
             KSU_VERSION=""       
         fi
-        echo "UPLOADNAME=-KernelSU$KSU_VERSION" >> $GITHUB_ENV
+        echo "UPLOADNAME=-KernelSU-${{ matrix.target }}$KSU_VERSION" >> $GITHUB_ENV
         if [ ${{ env.KSU_REVERT }} = true ]; then
             git apply $GITHUB_WORKSPACE/patches/KSU_REVERT.patch
         fi
