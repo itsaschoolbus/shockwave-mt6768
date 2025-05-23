@@ -49,7 +49,7 @@ jobs:
         mkdir -p $GITHUB_WORKSPACE/kernel_workspace
 
     - name: Download AOSP Clang
-      if: env.USE_CUSTOM_CLANG != 'true' && env.USE_CUSTOM_GCC != 'true' && env.ENABLE_GCC_AOSP != 'true'
+      if: env.USE_CUSTOM_CLANG != 'true' && env.USE_CUSTOM_GCC != 'true' && env.ENABLE_GCC_AOSP != 'true' && env.USE_NEUTRON_CLANG != 'true'
       run: |
         cd $GITHUB_WORKSPACE/kernel_workspace
         mkdir clang
@@ -57,7 +57,7 @@ jobs:
         tar -C clang/ -zxvf clang-${{ env.CLANG_VERSION }}.tar.gz
 
     - name: Download Custom Clang
-      if: env.USE_CUSTOM_CLANG == 'true' && env.USE_CUSTOM_GCC != 'true' && env.ENABLE_GCC_AOSP != 'true'
+      if: env.USE_CUSTOM_CLANG == 'true' && env.USE_CUSTOM_GCC != 'true' && env.ENABLE_GCC_AOSP != 'true' && env.USE_NEUTRON_CLANG != 'true'
       run: |
         cd $GITHUB_WORKSPACE/kernel_workspace
         if [[ ${{ env.CUSTOM_CLANG_SOURCE }} == *'.tar.gz' ]]; then
@@ -80,7 +80,7 @@ jobs:
         fi
 
     - name: Download GCC AOSP
-      if: env.ENABLE_GCC_AOSP == 'true' && env.USE_CUSTOM_GCC != 'true' && env.USE_CUSTOM_CLANG != 'true'
+      if: env.ENABLE_GCC_AOSP == 'true' && env.USE_CUSTOM_GCC != 'true' && env.USE_CUSTOM_CLANG != 'true' && env.USE_NEUTRON_CLANG != 'true'
       run: |
         cd $GITHUB_WORKSPACE/kernel_workspace
         if [ ${{ env.ENABLE_GCC_ARM64 }} = true ]; then
@@ -98,7 +98,7 @@ jobs:
         fi
 
     - name: Download Custom GCC
-      if: env.USE_CUSTOM_GCC == 'true' && env.ENABLE_GCC_AOSP != 'true' && env.USE_CUSTOM_CLANG != 'true'
+      if: env.USE_CUSTOM_GCC == 'true' && env.ENABLE_GCC_AOSP != 'true' && env.USE_CUSTOM_CLANG != 'true' && env.USE_NEUTRON_CLANG != 'true'
       run: |
         cd $GITHUB_WORKSPACE/kernel_workspace
         if [ ${{ env.USE_CUSTOM_GCC_64 }} = true ]; then
@@ -141,6 +141,18 @@ jobs:
                 mv -f "$(find ./gcc-32 -mindepth 1 -maxdepth 1 -type d)"/* ./gcc-32
             fi
         fi
+
+    - name: Download Neutron Clang
+      if: env.USE_CUSTOM_GCC != 'true' && env.ENABLE_GCC_AOSP != 'true' && env.USE_CUSTOM_CLANG != 'true' && env.USE_NEUTRON_CLANG == 'true'
+      run: |
+        cd $GITHUB_WORKSPACE/kernel_workspace
+        mkdir -p clang
+        cd clang
+        curl -LO "https://raw.githubusercontent.com/Neutron-Toolchains/antman/main/antman"
+        chmod +x antman
+        ./antman -S
+        export HOME=$GITHUB_WORKSPACE/kernel_workspace
+        ./antman --patch=glibc
 
     - name: Download mkbootimg tools
       if: env.BUILD_BOOT_IMG == 'true'
