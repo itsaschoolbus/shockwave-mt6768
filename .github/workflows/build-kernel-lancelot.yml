@@ -1,20 +1,27 @@
-name: Build Kernel
+name: Build Kernel [Lancelot]
 on:
   workflow_dispatch:
 
 jobs:
   build:
-    name: Build Kernel by ${{ github.actor }}
     runs-on: ubuntu-22.04
     env:
       CCACHE_COMPILERCHECK: "%compiler% -dumpmachine; %compiler% -dumpversion"
       CCACHE_NOHASHDIR: "true"
       CCACHE_HARDLINK: "true"
+    strategy:
+      matrix:
+        target: [ksun, ksun-old, suki, suki-old]
     steps:
     - uses: actions/checkout@v4
+    - name: Find correct config name
+      run: |
+        TARGET_CONFIG_FILENAME="${{ matrix.target }}"
+        TARGET_CONFIG_FILENAME="${TARGET_CONFIG_FILENAME/-old/}"
+        echo "TARGET_CONFIG_FILENAME_SUFFIX=$TARGET_CONFIG_FILENAME" >> $GITHUB_ENV
     - name: Prepare Environment
       run: |
-        grep -v -E "^#|^\n" config.env | sed 's/ #.*//; s/#.*//' >> $GITHUB_ENV
+        grep -v -E "^#|^\n" config-lancelot-${{ env.TARGET_CONFIG_FILENAME_SUFFIX }}.env | sed 's/ #.*//; s/#.*//' >> $GITHUB_ENV
 
     - name: Remove unused packages
       if: env.REMOVE_UNUSED_PACKAGES == 'true'
@@ -161,8 +168,8 @@ jobs:
             echo "HAVE_SOURCE_BOOT_IMAGE=true" >> $GITHUB_ENV
         fi
 
-    - name: Setup KernelSU
-      if: env.ENABLE_KERNELSU == 'true'
+    - name: Setup KernelSU-Next
+      if: env.ENABLE_KERNELSU == 'true' && contains(matrix.target, 'ksun')
       run: |
         cd $GITHUB_WORKSPACE/kernel_workspace/android-kernel
         curl -LSs "https://raw.githubusercontent.com/rifsxd/KernelSU-Next/next/kernel/setup.sh" | bash -s next
@@ -177,6 +184,26 @@ jobs:
         if [ ${{ env.KSU_REVERT }} = true ]; then
             git apply $GITHUB_WORKSPACE/patches/KSU_REVERT.patch
         fi
+    
+    - name: Setup SukiSU
+      if: env.ENABLE_KERNELSU == 'true' && contains(matrix.target, 'suki')
+      run: |
+        cd $GITHUB_WORKSPACE/kernel_workspace/android-kernel
+        curl -LSs "https://raw.githubusercontent.com/ShirkNeko/SukiSU-Ultra/main/kernel/setup.sh" | bash -s susfs-dev
+        if [ -d KernelSU ]; then
+            KSU_VERSION="_$(cd KernelSU && expr $(/usr/bin/git rev-list --count HEAD) + 10200)"
+        else
+            KSU_VERSION=""       
+        fi
+        echo "UPLOADNAME=-KernelSU$KSU_VERSION" >> $GITHUB_ENV
+        if [ ${{ env.KSU_REVERT }} = true ]; then
+            git apply $GITHUB_WORKSPACE/patches/KSU_REVERT.patch
+        fi
+    
+    - name: Check if old Android build
+      if: contains(matrix.target, 'old')
+      run: |
+        echo "OLD_ANDROID_SUPPORT=true" >> $GITHUB_ENV
 
     - name: Setup Configuration for Kernel
       run: |
@@ -290,7 +317,7 @@ jobs:
         else
             export PATH=$GITHUB_WORKSPACE/kernel_workspace/clang/bin:$PATH
         fi
-        export KBUILD_BUILD_HOST=Github-Action
+        export KBUILD_BUILD_HOST=github-actions
         export KBUILD_BUILD_USER=$(echo ${{ github.actor }} | tr A-Z a-z)
         if [ -n ${{ env.KSU_EXPECTED_SIZE }} ] && [ -n ${{ env.KSU_EXPECTED_HASH }} ]; then
           export KSU_EXPECTED_SIZE=${{ env.KSU_EXPECTED_SIZE }}
