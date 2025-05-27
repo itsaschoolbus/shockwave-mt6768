@@ -25,11 +25,13 @@ on:
 
 jobs:
   generate-build-matrix:
+    name: What to build?
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.set.outputs.matrix }}
     steps:
       - id: set
+        name: Generate build matrix
         run: |
           targets=()
           if [[ "${{ github.event.inputs.build_ksun }}" == "true" ]]; then targets+=("ksun"); fi
@@ -49,6 +51,7 @@ jobs:
       CCACHE_NOHASHDIR: "true"
       CCACHE_HARDLINK: "true"
     strategy:
+      fail-fast: false
       matrix: ${{ fromJson(needs.generate-build-matrix.outputs.matrix) }}
     steps:
     - uses: actions/checkout@v4
