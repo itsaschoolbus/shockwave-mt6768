@@ -233,7 +233,7 @@ jobs:
         cd KernelSU-Next
         git apply $GITHUB_WORKSPACE/patches/SUSFS_KSUN.patch
         fi
-        echo "UPLOADNAME=-KernelSU-${{ matrix.target }}$KSU_VERSION" >> $GITHUB_ENV
+        echo "UPLOADNAME=-${{ matrix.target }}$KSU_VERSION" >> $GITHUB_ENV
         if [ ${{ env.KSU_REVERT }} = true ]; then
             git apply $GITHUB_WORKSPACE/patches/KSU_REVERT.patch
         fi
@@ -248,7 +248,7 @@ jobs:
         else
             KSU_VERSION=""
         fi
-        echo "UPLOADNAME=-KernelSU-${{ matrix.target }}$KSU_VERSION" >> $GITHUB_ENV
+        echo "UPLOADNAME=-${{ matrix.target }}$KSU_VERSION" >> $GITHUB_ENV
         if [ ${{ env.KSU_REVERT }} = true ]; then
             git apply $GITHUB_WORKSPACE/patches/KSU_REVERT.patch
         fi
